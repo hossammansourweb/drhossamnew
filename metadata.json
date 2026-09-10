@@ -1,0 +1,6 @@
+{
+  "name": "د. حسام منصور أبوكل - حجز العيادة",
+  "description": "منصة حجز المواعيد الطبية لعيادة د. حسام منصور أبوكل - استشاري جراحة العظام بالقوات المسلحة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

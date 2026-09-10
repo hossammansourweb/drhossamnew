@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient record containing basic contact info",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "phone": { "type": "string", "minLength": 8, "maxLength": 20 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Medical appointment booking details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bookingNumber": { "type": "string", "maxLength": 30 },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "patientPhone": { "type": "string", "minLength": 8, "maxLength": 20 },
+        "bookingType": { "type": "string", "enum": ["new", "followup"] },
+        "price": { "type": "number" },
+        "appointmentDate": { "type": "string" },
+        "appointmentTime": { "type": "string" },
+        "paymentMethod": { "type": "string", "enum": ["instapay", "clinic"] },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "pay_at_clinic", "pending_review", "paid", "rejected"] },
+        "bookingStatus": { "type": "string", "enum": ["new", "confirmed", "attended", "not_attended", "completed", "cancelled"] },
+        "paymentProofUrl": { "type": "string" },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["bookingNumber", "patientName", "patientPhone", "bookingType", "price", "appointmentDate", "appointmentTime", "paymentMethod", "bookingStatus", "paymentStatus"]
+    },
+    "Slot": {
+      "title": "Slot",
+      "description": "Atomic reservation document to prevent double-booking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "isBooked": { "type": "boolean" },
+        "appointmentId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientPhone": { "type": "string" },
+        "bookedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "time", "isBooked"]
+    },
+    "Availability": {
+      "title": "Availability",
+      "description": "Doctor's working days, schedules, and blocked slots",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "slotDuration": { "type": "number" },
+        "isAvailable": { "type": "boolean" },
+        "blockedSlots": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["date", "startTime", "endTime", "isAvailable"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Clinic settings, doctor info, pricing, and contact",
+      "type": "object",
+      "properties": {
+        "doctorName": { "type": "string" },
+        "doctorTitle": { "type": "string" },
+        "newBookingPrice": { "type": "number" },
+        "followupPrice": { "type": "number" },
+        "clinics": { "type": "array" },
+        "phoneNumbers": { "type": "array" },
+        "whatsappNumber": { "type": "string" },
+        "emergencyNumber": { "type": "string" },
+        "googleMapsLink": { "type": "string" },
+        "workingHours": { "type": "string" },
+        "bookingInstructions": { "type": "string" },
+        "instapayIdentifier": { "type": "string" },
+        "instapayPhone": { "type": "string" },
+        "instapayInstructions": { "type": "string" },
+        "instapayQrUrl": { "type": "string" }
+      }
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Admin dashboard alerts for bookings and payments",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["type", "title", "message", "read"]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Patient directory records"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "All clinical appointment bookings"
+    },
+    "/slots/{slotId}": {
+      "schema": "Slot",
+      "description": "Atomic reservation documents preventing double booking"
+    },
+    "/availability/{availabilityId}": {
+      "schema": "Availability",
+      "description": "Clinic availability calendar and working hours"
+    },
+    "/settings/{settingsId}": {
+      "schema": "Settings",
+      "description": "Global clinic configuration and public pricing"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Internal administrative alerts"
+    }
+  }
+}

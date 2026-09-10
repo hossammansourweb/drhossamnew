@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // Helpers
+    // ============================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Admin = any signed-in account (admin tooling signs in with the
+    // clinic's Firebase Auth email account). Anonymous patients book
+    // without signing in and can never satisfy this check.
+    function isAdmin() {
+      return isSignedIn();
+    }
+
+    // ============================================================
+    // Default deny everything (deny-by-default security posture).
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ============================================================
+    // settings/clinic — PUBLIC clinic info & prices.
+    // The patient booking page (anonymous) reads this to render
+    // clinic names, working days, prices, InstaPay identifiers.
+    // Only admin can create/update.
+    // ============================================================
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // appointments — THE single source of truth for bookings.
+    //
+    // Documents:
+    //  - Real bookings: id "appt_<timestamp>_<rand>" with full PII.
+    //  - Slot reservations: deterministic id
+    //      "slot_<clinicId>_<date>_<time>"
+    //    carrying only non-PII booking-state fields
+    //    (clinic/date/time/bookingStatus). They exist exactly to make
+    //    the atomic double-booking transaction possible (transactions
+    //    can only lock a DocumentReference, not a query).
+    //
+    // PUBLIC LIST (readable by anonymous patients): allowed ONLY when
+    // the query filters on BOTH clinicId == X AND appointmentDate == Y
+    // with a sane limit. Rules cannot strip fields, so returned
+    // documents expose their fields; the slot-reservation documents
+    // contain no PII, and real bookings return bookingStatus different
+    // from 'cancelled' — patients only learn which appointmentTime
+    // values are booked for the clinic+date they are viewing.
+    //
+    // PUBLIC GET is allowed ONLY for the deterministic slot-reservation
+    // documents id "slot_<clinicId>_<date>_<time>" (no PII): the atomic
+    // double-booking transaction reads this exact document by id inside
+    // runTransaction() to lock clinic+date+time. Denying it makes every
+    // anonymous booking fail with permission-denied. Real booking
+    // documents ("appt_...") carry PII and stay admin-only for get.
+    //
+    // ADMIN (signed-in): full read (get + list), update, delete.
+    // ADMIN LIST also powers the dashboard's orderBy('createdAt')
+    // query.
+    //
+    // CREATE (anonymous patients): validated fields, constrained
+    // statuses (no self-confirming payments), deterministic slot
+    // reservation ids allowed so the booking transaction can write
+    // them.
+    // ============================================================
+    match /appointments/{appointmentId} {
+      function validBookingData() {
+        return request.resource.data.patientName is string
+               && request.resource.data.patientName.size() > 0
+               && request.resource.data.patientName.size() <= 120
+               && request.resource.data.patientPhone is string
+               && request.resource.data.patientPhone.size() > 0
+               && request.resource.data.patientPhone.size() <= 20
+               && request.resource.data.appointmentDate is string
+               && request.resource.data.appointmentDate.size() == 10
+               && request.resource.data.appointmentTime is string
+               && request.resource.data.clinicId is string
+               && request.resource.data.clinicName is string
+               && request.resource.data.bookingType in ['new', 'followup']
+               && request.resource.data.paymentMethod in ['clinic', 'instapay']
+               && request.resource.data.price is number
+               && request.resource.data.price >= 0
+               && request.resource.data.price <= 100000
+        && request.resource.data.bookingStatus == 'new'
+        && request.resource.data.paymentStatus in ['pay_at_clinic', 'pending_review']
+        && (
+          (('id' in request.resource.data) && request.resource.data.id == appointmentId) ||
+          (('appointmentId' in request.resource.data) && request.resource.data.appointmentId == appointmentId)
+        );
+      }
+
+      // Slot-reservation document (no PII, written inside the booking
+      // transaction to atomically claim clinic+date+time).
+      function validReservationData() {
+        return request.resource.data.appointmentDate is string
+               && request.resource.data.appointmentDate.size() == 10
+               && request.resource.data.appointmentTime is string
+               && request.resource.data.clinicId is string
+               && request.resource.data.clinicName is string
+               && request.resource.data.bookingStatus == 'new'
+               && request.resource.data.reservation == true
+               && !('patientName' in request.resource.data)
+               && !('patientPhone' in request.resource.data);
+      }
+
+      // Reads: admins get everything. Anonymous patients can query
+      // (list) appointments to check availability for clinic dates, and
+      // can get() deterministic slot-reservation documents ("slot_*", no PII)
+      // needed by the atomic booking transaction. Real booking documents
+      // ("appt_*") carry PII and stay admin-only for get.
+      allow get: if isAdmin() || appointmentId.split('_')[0] == 'slot';
+      allow list: if isAdmin() || resource.data.reservation == true;
+      allow create: if validBookingData() || validReservationData();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

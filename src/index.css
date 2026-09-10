@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Cairo', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom smooth transitions and utility */
+html {
+  scroll-behavior: smooth;
+}

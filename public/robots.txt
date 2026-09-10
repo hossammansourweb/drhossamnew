@@ -1,0 +1,13 @@
+# robots.txt — Dr. Hossam Mansour Clinic
+# Public booking pages are crawlable; admin / API / private areas are blocked.
+# If you add a custom domain, add a second Sitemap line with that domain.
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*?*booking*
+Disallow: /*?*token*
+
+Sitemap: https://hossammansourweb-9489f.web.app/sitemap.xml
