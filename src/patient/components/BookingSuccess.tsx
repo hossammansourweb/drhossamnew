@@ -14,8 +14,7 @@ import {
 } from 'lucide-react';
 import { Appointment, ClinicSettings } from '../../shared/types';
 import {
-  formatArabicDate,
-  getArabicDayName,
+  formatArabicDateOnly,
   createGoogleCalendarUrl
 } from '../../shared/utils/dateUtils';
 
@@ -30,8 +29,6 @@ export const BookingSuccess: React.FC<Props> = ({
   settings,
   onBookAnother
 }) => {
-  const dayName = getArabicDayName(appointment.appointmentDate);
-
   // Trigger celebration confetti
   useEffect(() => {
     try {
@@ -129,10 +126,10 @@ export const BookingSuccess: React.FC<Props> = ({
 
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" /> التاريخ واليوم
+            <Calendar className="w-3.5 h-3.5 text-slate-400" /> التاريخ
           </span>
           <span className="text-sm font-bold text-slate-900">
-            {dayName}، {formatArabicDate(appointment.appointmentDate)}
+            {formatArabicDateOnly(appointment.appointmentDate)}
           </span>
         </div>
 

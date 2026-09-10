@@ -59,6 +59,19 @@ export function formatShortArabicDate(dateStr: string): string {
   }
 }
 
+/** Date only, without the weekday name (e.g. "10 سبتمبر 2026"). */
+export function formatArabicDateOnly(dateStr: string): string {
+  try {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return dateStr;
+    const monthName = ARABIC_MONTHS[month - 1];
+    if (!monthName) return dateStr;
+    return `${day} ${monthName} ${year}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 export function convertTo12HourArabic(time24: string): string {
   // e.g. "09:00" -> "09:00 ص", "14:30" -> "02:30 م"
   if (!time24) return time24;
